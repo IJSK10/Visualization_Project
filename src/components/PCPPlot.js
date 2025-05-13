@@ -1,18 +1,11 @@
 "use client"
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-const PCPPlot = ({ order, setOrder }) => {
+const PCPPlot = ({ data, order, setOrder }) => {
   const svgRef = useRef(null);
-  const [data, setData] = useState([]);
-  const k = 4; // Default value as instructed
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:5001/data")
-      .then((response) => response.json())
-      .then((json) => setData(json))
-      .catch((error) => console.error("Error fetching data:", error));
-  }, []);
+  //const k = 4; // Default value as instructed
+ // Changed dependency to queryParameter
 
   // Function to move a dimension left in the order array
   const moveAxisLeft = (dimension) => {
@@ -48,7 +41,7 @@ const PCPPlot = ({ order, setOrder }) => {
 
     const margin = { top: 80, right: 30, bottom: 100, left: 10 },
       width = 1450 - margin.left - margin.right,
-      height = 600 - margin.top - margin.bottom;
+      height = 400 - margin.top - margin.bottom;
 
     const dimensions = [...order];
 
@@ -171,13 +164,13 @@ const PCPPlot = ({ order, setOrder }) => {
         }
       });
 
-    // Add left button arrow
+    // Add left button arrow - Changed fill to white for better contrast
     axisLabels.append("text")
       .attr("class", "move-button-text left")
       .attr("x", -20)
       .attr("y", 40)
       .attr("text-anchor", "middle")
-      .attr("fill", "black")
+      .attr("fill", "white")  // Changed from black to white
       .text("←")
       .style("font-size", "14px")
       .style("font-weight", "bold")
@@ -200,13 +193,13 @@ const PCPPlot = ({ order, setOrder }) => {
         }
       });
 
-    // Add right button arrow
+    // Add right button arrow - Changed fill to white for better contrast
     axisLabels.append("text")
       .attr("class", "move-button-text right")
       .attr("x", 20)
       .attr("y", 40)
       .attr("text-anchor", "middle")
-      .attr("fill", "black")
+      .attr("fill", "white")  // Changed from black to white
       .text("→")
       .style("font-size", "14px")
       .style("font-weight", "bold")

@@ -2,66 +2,76 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 
-const ScatterPlotMatrix = ({ numericFeatures }) => {
+const ScatterPlotMatrix = ({ numericFeatures, data, onBrush }) => {
   const [xIndex, setXIndex] = useState(0);
   const [yIndex, setYIndex] = useState(1);
   const svgRef = useRef();
-  const [data, setData] = useState([]);
 
-  // Navigation handlers
   const moveXLeft = () => setXIndex(prev => (prev > 0 ? prev - 1 : numericFeatures.length - 1));
   const moveXRight = () => setXIndex(prev => (prev < numericFeatures.length - 1 ? prev + 1 : 0));
   const moveYLeft = () => setYIndex(prev => (prev > 0 ? prev - 1 : numericFeatures.length - 1));
   const moveYRight = () => setYIndex(prev => (prev < numericFeatures.length - 1 ? prev + 1 : 0));
 
-  // Fetch data
-  useEffect(() => {
-    fetch('http://127.0.0.1:5001/data')
-      .then(res => res.json())
-      .then(data => setData(data))
-      .catch(err => console.error(err));
-  }, []);
-
-  // Draw scatter plot
   useEffect(() => {
     if (!data.length || !numericFeatures) return;
-    
+
     const xFeature = numericFeatures[xIndex];
     const yFeature = numericFeatures[yIndex];
-    
-    // Clear previous SVG
+
     d3.select(svgRef.current).selectAll("*").remove();
+
+    const binColors = {
+      1: "#4f46e5",   
+      2: "#FFD600",   
+      3: "#00C853",   
+      4: "#FF1744"    
+    };
+
     
-    // Set dimensions
-    const margin = { top: 50, right: 50, bottom: 50, left: 60 };
-    const width = 600 - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const margin = { top: 50, right: 50, bottom: 50, left: 80 };
     
-    // Create SVG
+    const outerWidth = 418;
+    const outerHeight = 264;
+    
+    const width = (outerWidth - margin.left - margin.right) * 1.1;
+    const height = (outerHeight - margin.top - margin.bottom) * 1.1;
+
     const svg = d3.select(svgRef.current)
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom)
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
-    
-    // Create scales
+
     const x = d3.scaleLinear()
       .domain([d3.min(data, d => +d[xFeature]) * 0.9, d3.max(data, d => +d[xFeature]) * 1.1])
       .range([0, width]);
-    
+
     const y = d3.scaleLinear()
       .domain([d3.min(data, d => +d[yFeature]) * 0.9, d3.max(data, d => +d[yFeature]) * 1.1])
       .range([height, 0]);
+
     
-    // Create axes
-    svg.append('g')
-      .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(x));
+    const brush = d3.brush()
+      .extent([[0, 0], [width, height]])
+      .on('end', (event) => {
+        if (!event.selection) {
+          onBrush([]);
+          return;
+        }
+        const [[x0, y0], [x1, y1]] = event.selection;
+        const selectedPoints = data.filter(d => {
+          const cx = x(+d[xFeature]);
+          const cy = y(+d[yFeature]);
+          return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
+        });
+        onBrush(selectedPoints.map(d => d.id));
+      });
+
+    svg.append("g")
+      .attr("class", "brush")
+      .call(brush);
+
     
-    svg.append('g')
-      .call(d3.axisLeft(y));
-    
-    // Add points
     svg.selectAll('circle')
       .data(data)
       .enter()
@@ -69,119 +79,107 @@ const ScatterPlotMatrix = ({ numericFeatures }) => {
       .attr('cx', d => x(+d[xFeature]))
       .attr('cy', d => y(+d[yFeature]))
       .attr('r', 4)
-      .style('fill', '#4f46e5')
+      .style('fill', d => binColors[d.bin_id] || '#bbb')
       .style('opacity', 0.7);
+
     
-    // Add navigation buttons for X axis
+    svg.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .style("font-size", "10px");
+
+    
+    const yAxis = d3.axisLeft(y)
+      .ticks(y.ticks().length > 10 ? y.ticks().length / 2 : y.ticks().length)
+      .tickSizeOuter(0);
+
+    svg.append('g')
+      .call(yAxis)
+      .selectAll("text")
+      .style("font-size", "10px");
+
+    
     const xAxisLabel = svg.append('g')
-      .attr('transform', `translate(${width/2}, ${height + 40})`);
+      .attr('transform', `translate(${width / 2}, ${height + 40})`);
     
-    // Left button for X axis
+    
     xAxisLabel.append('rect')
-      .attr('x', -85)
-      .attr('y', -15)
-      .attr('width', 20)
-      .attr('height', 20)
-      .attr('rx', 3)
-      .attr('fill', 'steelblue')
-      .style('cursor', 'pointer')
-      .on('click', moveXLeft);
+      .attr('x', -70).attr('y', -8).attr('width', 15).attr('height', 15).attr('rx', 2)
+      .attr('fill', 'steelblue').style('cursor', 'pointer').on('click', moveXLeft);
+    xAxisLabel.append('text')
+      .attr('x', -62).attr('y', 2).attr('text-anchor', 'middle')
+      .attr('fill', 'white').style('pointer-events', 'none').style('font-size', '10px').text('←');
+    
     
     xAxisLabel.append('text')
-      .attr('x', -75)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('←');
+      .attr('x', 0).attr('y', 5).attr('text-anchor', 'middle')
+      .style('font-weight', 'bold').style('font-size', '12px').text(xFeature);
     
-    // X axis label
-    xAxisLabel.append('text')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .style('font-weight', 'bold')
-      .text(xFeature);
     
-    // Right button for X axis
     xAxisLabel.append('rect')
-      .attr('x', 65)
-      .attr('y', -15)
-      .attr('width', 20)
-      .attr('height', 20)
-      .attr('rx', 3)
-      .attr('fill', 'steelblue')
-      .style('cursor', 'pointer')
-      .on('click', moveXRight);
-    
+      .attr('x', 53).attr('y', -8).attr('width', 15).attr('height', 15).attr('rx', 2)
+      .attr('fill', 'steelblue').style('cursor', 'pointer').on('click', moveXRight);
     xAxisLabel.append('text')
-      .attr('x', 75)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('→');
+      .attr('x', 60).attr('y', 2).attr('text-anchor', 'middle')
+      .attr('fill', 'white').style('pointer-events', 'none').style('font-size', '10px').text('→');
+
     
-    // Add navigation buttons for Y axis
     const yAxisLabel = svg.append('g')
-      .attr('transform', `translate(${-40}, ${height/2}) rotate(-90)`);
+      .attr('transform', `translate(${-40}, ${height / 2}) rotate(-90)`);
     
-    // Left button for Y axis
+    
     yAxisLabel.append('rect')
-      .attr('x', -85)
-      .attr('y', -15)
-      .attr('width', 20)
-      .attr('height', 20)
-      .attr('rx', 3)
-      .attr('fill', 'steelblue')
-      .style('cursor', 'pointer')
-      .on('click', moveYLeft);
+      .attr('x', -67).attr('y', -7).attr('width', 15).attr('height', 15).attr('rx', 2)
+      .attr('fill', 'steelblue').style('cursor', 'pointer').on('click', moveYLeft);
+    yAxisLabel.append('text')
+      .attr('x', -62).attr('y', 4).attr('text-anchor', 'middle')
+      .attr('fill', 'white').style('pointer-events', 'none').style('font-size', '10px').text('←');
+    
     
     yAxisLabel.append('text')
-      .attr('x', -75)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('←');
+      .attr('x', 0).attr('y', 5).attr('text-anchor', 'middle')
+      .style('font-weight', 'bold').style('font-size', '12px').text(yFeature);
     
-    // Y axis label
-    yAxisLabel.append('text')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .style('font-weight', 'bold')
-      .text(yFeature);
     
-    // Right button for Y axis
     yAxisLabel.append('rect')
-      .attr('x', 65)
-      .attr('y', -15)
-      .attr('width', 20)
-      .attr('height', 20)
-      .attr('rx', 3)
-      .attr('fill', 'steelblue')
-      .style('cursor', 'pointer')
-      .on('click', moveYRight);
-    
+      .attr('x', 53).attr('y', -7).attr('width', 15).attr('height', 15).attr('rx', 2)
+      .attr('fill', 'steelblue').style('cursor', 'pointer').on('click', moveYRight);
     yAxisLabel.append('text')
-      .attr('x', 75)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .style('pointer-events', 'none')
-      .text('→');
+      .attr('x', 58).attr('y', 4).attr('text-anchor', 'middle')
+      .attr('fill', 'white').style('pointer-events', 'none').style('font-size', '10px').text('→');
+
     
-    // Add title
-    svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', -25)
+    const titleGroup = svg.append('g')
+      .attr('transform', `translate(${width/2}, -25)`);
+
+    titleGroup.append('text')
       .attr('text-anchor', 'middle')
       .style('font-size', '16px')
       .style('font-weight', 'bold')
-      .text(`${yFeature} vs ${xFeature}`);
-      
-  }, [data, xIndex, yIndex, numericFeatures]);
+      .text('Scatter Plot');
+
+    const resetButton = titleGroup.append("g")
+      .attr("transform", "translate(60, -7)")
+      .style("cursor", "pointer")
+      .on("click", () => onBrush([]));
+
+    
+    resetButton.append("circle")
+      .attr("r", 8)
+      .attr("fill", "#fff")
+      .attr("stroke", "#4f46e5")
+      .attr("stroke-width", 1.5);
+
+    
+    resetButton.append("path")
+      .attr("d", "M-3,-2 A5,5 0 1,1 -3,2 M-3,2 L-5,0 M-3,2 L-1,0")
+      .attr("fill", "none")
+      .attr("stroke", "#4f46e5")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-linecap", "round");
+
+  }, [data, xIndex, yIndex, numericFeatures, onBrush]);
 
   return (
     <div className="flex flex-col items-center">

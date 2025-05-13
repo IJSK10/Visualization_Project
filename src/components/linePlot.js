@@ -1,27 +1,31 @@
-"use client"
-import { useEffect, useRef, useState } from "react";
+"use client";
+import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-const MarksLinePlot = () => {
+const StatsBarPlot = ({ data }) => {
   const svgRef = useRef();
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:5001/data")
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.error(err));
-  }, []);
 
   useEffect(() => {
     if (!data.length) return;
 
-    // Sort data by Exam_Score (new marks)
-    const sorted = [...data].sort((a, b) => +a.Exam_Score - +b.Exam_Score);
+    const avgExam = d3.mean(data, d => +d.Exam_Score);
+    const avgPrev = d3.mean(data, d => +d.Previous_Scores);
+    const diffs = data.map(d => +d.Exam_Score - +d.Previous_Scores);
+    const stdDev = d3.deviation(diffs);
+    
+    const higherCount = data.filter(d => +d.Exam_Score > +d.Previous_Scores).length;
+    const percentHigher = (higherCount / data.length) * 100;
 
-    const margin = { top: 40, right: 40, bottom: 40, left: 60 };
-    const width = 1600 - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const barsData = [
+      { label: "Average Previous Score", value: avgPrev },
+      { label: "Average Exam Score", value: avgExam },
+      { label: "Standard Deviation", value: stdDev },
+      { label: "%of students Scored Higher", value: percentHigher }
+    ];
+
+    const margin = { top: 50, right: 40, bottom: 70, left: 40 };
+    const width = (400 - margin.left - margin.right)*1.25;
+    const height = (200 - margin.top - margin.bottom);
 
     d3.select(svgRef.current).selectAll("*").remove();
 
@@ -32,207 +36,88 @@ const MarksLinePlot = () => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // X scale: index (sorted by Exam_Score)
+    const barAreaWidth = width * 0.8;
     const x = d3
-      .scaleLinear()
-      .domain([0, sorted.length - 1])
-      .range([0, width]);
+      .scaleBand()
+      .domain(barsData.map(d => d.label))
+      .range([0, barAreaWidth])
+      .padding(0.30);
 
-    // Y scale: marks
+    const maxValue = Math.max(...barsData.map(d => d.value), 100);
     const y = d3
       .scaleLinear()
-      .domain([
-        30,
-        100,
-      ])
+      .domain([0, maxValue])
       .range([height, 0]);
 
-    // Line generators
-    const linePrev = d3
-      .line()
-      .x((d, i) => x(i))
-      .y(d => y(+d.Previous_Scores));
-    const lineNew = d3
-      .line()
-      .x((d, i) => x(i))
-      .y(d => y(+d.Exam_Score));
-
-    // Draw previous marks line
     svg
-      .append("path")
-      .datum(sorted)
-      .attr("fill", "none")
-      .attr("stroke", "steelblue")
-      .attr("stroke-width", 2)
-      .attr("d", linePrev);
-
-    // Draw new marks line
-    svg
-      .append("path")
-      .datum(sorted)
-      .attr("fill", "none")
-      .attr("stroke", "hotpink")
-      .attr("stroke-width", 2)
-      .attr("d", lineNew);
-
-    // Tooltip div
-    let tooltip = d3.select(".lineplot-tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3
-        .select("body")
-        .append("div")
-        .attr("class", "lineplot-tooltip")
-        .style("position", "absolute")
-        .style("background", "white")
-        .style("padding", "8px 12px")
-        .style("border-radius", "6px")
-        .style("box-shadow", "0 2px 8px rgba(0,0,0,0.15)")
-        .style("pointer-events", "none")
-        .style("font-size", "13px")
-        .style("opacity", 0);
-    }
-
-    // Add data points for previous marks
-    svg
-      .selectAll(".point-prev")
-      .data(sorted)
+      .selectAll(".bar")
+      .data(barsData)
       .enter()
-      .append("circle")
-      .attr("class", "point-prev")
-      .attr("cx", (d, i) => x(i))
-      .attr("cy", d => y(+d.Previous_Scores))
-      .attr("r", 4)
-      .attr("fill", "steelblue")
-      .on("mouseover", function (event, d) {
-        d3.select(this).attr("r", 7);
-        tooltip
-          .html(
-            `<b>Previous Marks:</b> ${d.Previous_Scores}<br/><b>New Marks:</b> ${d.Exam_Score}`
-          )
-          .style("left", event.pageX + 15 + "px")
-          .style("top", event.pageY - 25 + "px")
-          .transition()
-          .duration(100)
-          .style("opacity", 1);
-      })
-      .on("mousemove", function (event) {
-        tooltip
-          .style("left", event.pageX + 15 + "px")
-          .style("top", event.pageY - 25 + "px");
-      })
-      .on("mouseout", function () {
-        d3.select(this).attr("r", 4);
-        tooltip.transition().duration(150).style("opacity", 0);
-      });
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", d => x(d.label))
+      .attr("y", d => y(d.value))
+      .attr("width", x.bandwidth())
+      .attr("height", d => height - y(d.value))
+      .attr("fill", "hotpink");
 
-    // Add data points for new marks  
     svg
-      .selectAll(".point-new")
-      .data(sorted)
+      .selectAll(".value-label")
+      .data(barsData)
       .enter()
-      .append("circle")
-      .attr("class", "point-new")
-      .attr("cx", (d, i) => x(i))
-      .attr("cy", d => y(+d.Exam_Score))
-      .attr("r", 4)
-      .attr("fill", "hotpink")
-      .on("mouseover", function (event, d) {
-        d3.select(this).attr("r", 7);
-        tooltip
-          .html(
-            `<b>Previous Marks:</b> ${d.Previous_Scores}<br/><b>New Marks:</b> ${d.Exam_Score}`
-          )
-          .style("left", event.pageX + 15 + "px")
-          .style("top", event.pageY - 25 + "px")
-          .transition()
-          .duration(100)
-          .style("opacity", 1);
-      })
-      .on("mousemove", function (event) {
-        tooltip
-          .style("left", event.pageX + 15 + "px")
-          .style("top", event.pageY - 25 + "px");
-      })
-      .on("mouseout", function () {
-        d3.select(this).attr("r", 4);
-        tooltip.transition().duration(150).style("opacity", 0);
-      });
+      .append("text")
+      .attr("class", "value-label")
+      .attr("x", d => x(d.label) + x.bandwidth() / 2)
+      .attr("y", d => y(d.value) - 5)
+      .attr("text-anchor", "middle")
+      .style("font-size", "10.5px")
+      .style("font-weight", "bold")
+      .text(d => d.value !== undefined && !isNaN(d.value) ? d.value.toFixed(1) : "N/A");
 
-    // Axes
-    svg
+    const xAxis = svg
       .append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(
-        d3
-          .axisBottom(x)
-          .ticks(10)
-          .tickFormat((d) => (d % 1 === 0 ? d : ""))
-      )
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", 35)
-      .attr("fill", "black")
+      .call(d3.axisBottom(x));
+
+    xAxis.selectAll("text")
+      .each(function(d) {
+        const words = d.split(" ");
+        d3.select(this)
+          .text(null)
+          .selectAll("tspan")
+          .data(words)
+          .enter()
+          .append("tspan")
+          .attr("x", 0)
+          .attr("dy", (word, i) => i === 0 ? "1em" : "1.2em")
+          .text(word => word);
+      })
       .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
-      .text("Student (sorted by New Marks)");
+      .attr("dx", "0em")
+      .attr("dy", "1.5em");
+
+    svg.append("g")
+      .call(d3.axisLeft(y)
+        .ticks(Math.ceil(maxValue / 20))
+        .tickFormat(d => `${d}`)
+      );
 
     svg
-      .append("g")
-      .call(d3.axisLeft(y))
       .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("x", -height / 2)
-      .attr("y", -45)
-      .attr("fill", "black")
+      .attr("x", barAreaWidth / 2)
+      .attr("y", -25)
       .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
-      .text("Marks");
-
-    // Legend
-    svg
-      .append("circle")
-      .attr("cx", width - 120)
-      .attr("cy", -10)
-      .attr("r", 6)
-      .attr("fill", "steelblue");
-    svg
-      .append("text")
-      .attr("x", width - 110)
-      .attr("y", -7)
-      .attr("alignment-baseline", "middle")
-      .style("font-size", "14px")
-      .text("Previous Marks");
-
-    svg
-      .append("circle")
-      .attr("cx", width - 120)
-      .attr("cy", 15)
-      .attr("r", 6)
-      .attr("fill", "hotpink");
-    svg
-      .append("text")
-      .attr("x", width - 110)
-      .attr("y", 18)
-      .attr("alignment-baseline", "middle")
-      .style("font-size", "14px")
-      .text("New Marks");
-
-    // Title
-    svg
-      .append("text")
-      .attr("x", width / 2)
-      .attr("y", -20)
-      .attr("text-anchor", "middle")
-      .style("font-size", "20px")
+      .style("font-size", "16px")
       .style("font-weight", "bold")
-      .text("Previous Marks vs New Marks (Sorted by New Marks)");
+      .text("Score Statistics");
+
   }, [data]);
 
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={{ textAlign: "center", color: "black" }}>
       <svg ref={svgRef}></svg>
     </div>
   );
 };
 
-export default MarksLinePlot;
+export default StatsBarPlot;

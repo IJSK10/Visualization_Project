@@ -1,39 +1,48 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
 df = pd.read_csv('StudentPerformanceFactors.csv')
 
+def get_bin(score):
+    try:
+        score = float(score)
+    except Exception:
+        return None
+    if 50 <= score < 65:
+        return 1
+    elif 65 <= score < 80:
+        return 2
+    elif 80 <= score < 90:
+        return 3
+    elif 90 <= score <= 105:
+        return 4
+    else:
+        return
+
+df['bin_id'] = df['Exam_Score'].apply(get_bin)
+df_cleaned = df.dropna()  
+
 @app.route('/data')
 def get_data():
-    # Drop rows with NA values
-    df_cleaned = df.dropna()
+    filtered = df_cleaned.copy()
 
-    # Define binning logic
-    def get_bin(score):
-        if 50 <= score < 65:
-            return 1
-        elif 65 <= score < 80:
-            return 2
-        elif 80 <= score < 90:
-            return 3
-        elif 90 <= score <= 101:
-            return 4
+    
+    for key, values in request.args.lists():
+        values_set = set(values)
+        if key == "id":
+            
+            filtered = filtered[filtered['id'].astype(str).isin(values_set)]
+        elif key == "bin_id":
+            filtered = filtered[filtered['bin_id'].astype(str).isin(values_set)]
         else:
-            return None
+            if key in filtered.columns:
+                filtered = filtered[filtered[key].astype(str).isin(values_set)]
 
-    # Add bin_id column
-    data_with_bins = df_cleaned.copy()
-    if 'Exam_Score' in data_with_bins.columns:
-        data_with_bins['bin_id'] = data_with_bins['Exam_Score'].apply(get_bin)
-    else:
-        return jsonify({'error': 'Score column not found'}), 400
-
-    # Return all rows with bin_id
-    return jsonify(data_with_bins.to_dict(orient='records'))
+    return jsonify(filtered.to_dict(orient='records'))
 
 if __name__ == "__main__":
     app.run(debug=True, host="127.0.0.1", port=5001)
