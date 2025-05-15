@@ -9,6 +9,8 @@ import RadarPlot from '../components/radarPlot';
 import SchoolPlot from '../components/schoolType';
 import InternetPlot from '../components/internetPlot';
 
+
+
 import Image from 'next/image'
 
 export default function Home() {
@@ -27,6 +29,24 @@ export default function Home() {
   const [schoolType, setSchoolType] = useState([]);
   const [internetAccess, setInternetAccess] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  const resetAllFilters = () => {
+  setDistanceFromHome([]);
+  setParentalEducationLevel([]);
+  setTeacherQuality([]);
+  setFamilyIncome([]);
+  setMotivationLevel([]);
+  setAccessToResources([]);
+  setParentalInvolvement([]);
+  setLearningDisabilities([]);
+  setPeerInfluence([]);
+  setExtracurricularActivities([]);
+  setSelectedBins([]);
+  setGender([]);
+  setSchoolType([]);
+  setInternetAccess([]);
+  setSelectedIds([]);
+};
 
   const BarchartVariables = [
     'Parental_Involvement',
@@ -126,7 +146,7 @@ export default function Home() {
     <div className="bg-white text-black" style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <div style={{
         position: 'absolute',
-        left: '50%',
+        left: '52%',
         top: 5,
         transform: 'translateX(-50%)',
         zIndex: 2,
@@ -151,11 +171,33 @@ export default function Home() {
           width={60}
           height={20}
         />
+        <button
+  onClick={resetAllFilters}
+  style={{
+    margin: '5px',
+    marginLeft: '20px',
+    background: '#EEEEEE',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '8px',
+    paddingLeft : '8px',
+  }}
+  aria-label="Reset all filters"
+  title="Reset all filters"
+>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+  </svg>
+</button>
       </div>
 
       <div style={{
         position: 'absolute', left: 20, top: 55, width: 380, height: 170, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <Histogram
           data={data}
@@ -166,7 +208,7 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 510, top: 400, width: 350, height: 320, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <RadarPlot
           initialFeatures={['Hours_Studied', 'Attendance', 'Sleep_Hours', 'Previous_Scores']}
@@ -176,7 +218,7 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 970, top: 55, width: 580, height: 670, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <HorizontalBarChart
           data={data}
@@ -207,14 +249,14 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 20, top: 238, width: 380, height: 190, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <LinePlot data={data} />
       </div>
 
       <div style={{
         position: 'absolute', left: 425, top: 55, width: 130, height: 320, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <Gender
           data={data}
@@ -225,7 +267,7 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 25, top: 445, width: 370, height: 280, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <ScatterPlot
           data={data}
@@ -236,7 +278,7 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 580, top: 55, width: 370, height: 170, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <SchoolPlot
           data={data}
@@ -247,7 +289,7 @@ export default function Home() {
 
       <div style={{
         position: 'absolute', left: 580, top: 240, width: 370, height: 140, zIndex: 1,
-        background: '#f9f9f9', borderRadius: 10, boxShadow: '0 2px 8px #0001'
+        background: '#FFFDF6', borderRadius: 10, boxShadow: '0 2px 8px #0001'
       }}>
         <InternetPlot
           data={data}

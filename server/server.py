@@ -12,16 +12,16 @@ def get_bin(score):
         score = float(score)
     except Exception:
         return None
-    if 50 <= score < 65:
+    if 50 <= score <= 65:
         return 1
-    elif 65 <= score < 80:
+    elif 65 < score <= 75:
         return 2
-    elif 80 <= score < 90:
+    elif 75 < score <= 90:
         return 3
-    elif 90 <= score <= 105:
+    elif 90 < score <= 100:
         return 4
     else:
-        return
+        return 1
 
 df['bin_id'] = df['Exam_Score'].apply(get_bin)
 df_cleaned = df.dropna()  

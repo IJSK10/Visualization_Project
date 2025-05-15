@@ -4,9 +4,9 @@ import * as d3 from 'd3'
 
 const BIN_RANGES = [
   { bin: 1, label: "50–64", range: [50, 65], color: "#4f46e5" },
-  { bin: 2, label: "65–79", range: [65, 80], color: "#FFD600" },
-  { bin: 3, label: "80–89", range: [80, 90], color: "#00C853" },
-  { bin: 4, label: "90–100", range: [90, 101], color: "#FF1744" }
+  { bin: 2, label: "65–79", range: [65, 75], color: "#FFD600" },
+  { bin: 3, label: "80–89", range: [75, 90], color: "#00C853" },
+  { bin: 4, label: "90–100", range: [90, 100], color: "#FF1744" }
 ];
 
 const ALL_CATEGORIES = {

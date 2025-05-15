@@ -3,10 +3,10 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
 const BIN_RANGES = [
-  { bin: 1, label: "50–64", range: [50, 65], color: "#4f46e5" },
-  { bin: 2, label: "65–79", range: [65, 80], color: "#FFD600" },
-  { bin: 3, label: "80–89", range: [80, 90], color: "#00C853" },
-  { bin: 4, label: "90–100", range: [90, 101], color: "#FF1744" }
+    { bin: 1, label: "50–65", range: [50, 65], color: "#4f46e5" },
+  { bin: 2, label: "66–75", range: [66, 75], color: "#FFD600" },
+  { bin: 3, label: "76–90", range: [76, 90], color: "#00C853" },
+  { bin: 4, label: "91–100", range: [91, 100], color: "#FF1744" }
 ];
 
 const Histogram = ({ data, selectedBins, updateSelectedBins }) => {
@@ -34,7 +34,7 @@ const Histogram = ({ data, selectedBins, updateSelectedBins }) => {
       bin,
       label,
       color,
-      count: data.filter(d => +d.Exam_Score >= range[0] && +d.Exam_Score < range[1]).length
+      count: data.filter(d => +d.Exam_Score >= range[0] && +d.Exam_Score <= range[1]).length
     }));
 
     const x = d3.scaleBand()

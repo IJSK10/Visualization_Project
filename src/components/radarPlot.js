@@ -54,10 +54,10 @@ const RadarPlot = ({ initialFeatures, data }) => {
     for (let bin = 1; bin <= 4; bin++) {
       const binData = data.filter(d => {
         const score = +d.Exam_Score;
-        if (bin === 1) return score >= 50 && score < 65;
-        if (bin === 2) return score >= 65 && score < 80;
-        if (bin === 3) return score >= 80 && score < 90;
-        if (bin === 4) return score >= 90 && score <= 100;
+        if (bin === 1) return score > 50 && score <= 65;
+        if (bin === 2) return score >= 66 && score <= 75;
+        if (bin === 3) return score >= 76 && score <= 90;
+        if (bin === 4) return score >= 91 && score <= 100;
         return false;
       });
 

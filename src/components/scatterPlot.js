@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 
 const ScatterPlotMatrix = ({ numericFeatures, data, onBrush }) => {
-  const [xIndex, setXIndex] = useState(0);
-  const [yIndex, setYIndex] = useState(1);
+  const [xIndex, setXIndex] = useState(1);
+  const [yIndex, setYIndex] = useState(3);
   const svgRef = useRef();
 
   const moveXLeft = () => setXIndex(prev => (prev > 0 ? prev - 1 : numericFeatures.length - 1));
